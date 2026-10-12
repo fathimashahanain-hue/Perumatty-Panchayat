@@ -1,0 +1,1456 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#164e38">
+
+  <title>Perumatty Grama Panchayat | WebGIS</title>
+
+  <meta name="description" content="Explore Perumatty Grama Panchayat through an interactive WebGIS portal featuring geography, spatial information and local resources.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Leaflet map library -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <style>
+    /* =========================
+       GLOBAL DESIGN
+    ========================== */
+    :root {
+      --green: #164e38;
+      --green-dark: #103b2c;
+      --green-light: #e8f3e9;
+      --gold: #d5a94d;
+      --cream: #f8f7f1;
+      --white: #ffffff;
+      --text: #24352c;
+      --muted: #69776e;
+      --border: #e3e9e2;
+      --shadow: 0 12px 35px rgba(20, 55, 38, 0.09);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+      scroll-padding-top: 95px;
+    }
+
+    body {
+      font-family: "DM Sans", sans-serif;
+      background: var(--cream);
+      color: var(--text);
+      line-height: 1.7;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: "Manrope", sans-serif;
+      line-height: 1.25;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    img {
+      max-width: 100%;
+      display: block;
+    }
+
+    button {
+      font: inherit;
+    }
+
+    .container {
+      width: min(1160px, 92%);
+      margin: auto;
+    }
+
+    .section {
+      padding: 76px 0;
+    }
+
+    .section-heading {
+      max-width: 720px;
+      margin: 0 auto 38px;
+      text-align: center;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      color: var(--green);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+
+    .section-heading h2 {
+      font-size: clamp(27px, 4vw, 39px);
+      color: var(--green-dark);
+      margin-bottom: 14px;
+    }
+
+    .section-heading p {
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 13px 21px;
+      border-radius: 9px;
+      font-weight: 700;
+      font-size: 14px;
+      border: 1px solid transparent;
+      transition: 0.25s;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: var(--green);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--green-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn-outline {
+      border-color: rgba(255,255,255,.65);
+      color: white;
+      background: rgba(255,255,255,.08);
+    }
+
+    .btn-outline:hover {
+      background: white;
+      color: var(--green);
+    }
+
+    /* =========================
+       TOP GOVERNMENT BAR
+    ========================== */
+    .gov-bar {
+      background: var(--green-dark);
+      color: #e7f1e9;
+      font-size: 12px;
+      padding: 8px 0;
+    }
+
+    .gov-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .gov-left {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .gov-left img {
+      width: 27px;
+      height: 27px;
+      object-fit: contain;
+      background: white;
+      border-radius: 50%;
+      padding: 2px;
+    }
+
+    /* =========================
+       NAVIGATION
+    ========================== */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(255,255,255,.97);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-inner {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 25px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-logo {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      border-radius: 10px;
+    }
+
+    .brand h2 {
+      font-size: 16px;
+      color: var(--green-dark);
+    }
+
+    .brand p {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 13px;
+      font-weight: 700;
+      color: #47564b;
+      transition: .2s;
+    }
+
+    .nav-links a:hover {
+      color: var(--green);
+    }
+
+    .nav-links .nav-cta {
+      color: white;
+      background: var(--green);
+      padding: 10px 15px;
+      border-radius: 8px;
+    }
+
+    .menu-toggle {
+      display: none;
+      background: var(--green-light);
+      border: 0;
+      color: var(--green);
+      border-radius: 8px;
+      width: 43px;
+      height: 43px;
+      font-size: 23px;
+      cursor: pointer;
+    }
+
+    /* =========================
+       HERO SECTION
+    ========================== */
+    .hero {
+      position: relative;
+      min-height: 570px;
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      background: var(--green-dark);
+      color: white;
+    }
+
+    .hero-image {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        90deg,
+        rgba(8, 36, 25, .91) 0%,
+        rgba(8, 36, 25, .72) 48%,
+        rgba(8, 36, 25, .22) 100%
+      );
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 760px;
+      padding: 90px 0;
+    }
+
+    .hero-tag {
+      display: inline-block;
+      padding: 7px 13px;
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 30px;
+      background: rgba(255,255,255,.1);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 22px;
+    }
+
+    .hero h1 {
+      font-size: clamp(36px, 6vw, 63px);
+      letter-spacing: -1.7px;
+      margin-bottom: 22px;
+    }
+
+    .hero h1 span {
+      color: #e6c775;
+    }
+
+    .hero p {
+      max-width: 640px;
+      font-size: 16px;
+      color: #e1ebe3;
+      margin-bottom: 30px;
+    }
+
+    .hero-actions {
+      display: flex;
+      gap: 13px;
+      flex-wrap: wrap;
+    }
+
+    /* =========================
+       INTRODUCTION
+    ========================== */
+    .intro-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+      align-items: center;
+    }
+
+    .intro-image-wrap {
+      position: relative;
+    }
+
+    .intro-image {
+      width: 100%;
+      height: 390px;
+      object-fit: cover;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      background: #e2e9df;
+    }
+
+    .image-caption {
+      position: absolute;
+      bottom: 16px;
+      left: 16px;
+      right: 16px;
+      background: rgba(16,59,44,.9);
+      color: white;
+      padding: 13px 16px;
+      border-radius: 10px;
+      font-size: 13px;
+    }
+
+    .intro-text h2 {
+      font-size: clamp(27px, 4vw, 38px);
+      color: var(--green-dark);
+      margin-bottom: 20px;
+    }
+
+    .intro-text p {
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-size: 15px;
+    }
+
+    .intro-note {
+      border-left: 4px solid var(--gold);
+      padding: 12px 17px;
+      background: white;
+      border-radius: 0 10px 10px 0;
+      margin: 23px 0;
+      font-size: 14px;
+    }
+
+    /* =========================
+       QUICK INFORMATION CARDS
+    ========================== */
+    .facts-section {
+      background: #edf3eb;
+      padding: 36px 0;
+    }
+
+    .facts-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
+    }
+
+    .fact-card {
+      background: white;
+      padding: 23px;
+      border-radius: 14px;
+      border: 1px solid #e2e9e0;
+    }
+
+    .fact-icon {
+      width: 42px;
+      height: 42px;
+      display: grid;
+      place-items: center;
+      border-radius: 11px;
+      background: var(--green-light);
+      font-size: 21px;
+      margin-bottom: 15px;
+    }
+
+    .fact-card h3 {
+      color: var(--green-dark);
+      font-size: 15px;
+      margin-bottom: 5px;
+    }
+
+    .fact-card p {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* =========================
+       LOCATION MAP
+    ========================== */
+    .location-layout {
+      display: grid;
+      grid-template-columns: .9fr 1.1fr;
+      gap: 35px;
+      align-items: center;
+    }
+
+    .location-text h3 {
+      color: var(--green-dark);
+      font-size: 25px;
+      margin-bottom: 15px;
+    }
+
+    .location-text p {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 15px;
+    }
+
+    .location-image {
+      width: 100%;
+      height: 350px;
+      object-fit: contain;
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 10px;
+    }
+
+    /* =========================
+       INTERACTIVE WEBGIS
+    ========================== */
+    .webgis-section {
+      background: #eaf1e8;
+    }
+
+    .map-shell {
+      background: white;
+      border: 1px solid #dce6da;
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+
+    .map-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      padding: 5px 3px 15px;
+    }
+
+    .map-toolbar h3 {
+      color: var(--green-dark);
+      font-size: 17px;
+    }
+
+    .map-toolbar p {
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .map-controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .map-controls button {
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      background: white;
+      color: var(--green);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 12px;
+    }
+
+    .map-controls button:hover {
+      background: var(--green-light);
+    }
+
+    #map {
+      width: 100%;
+      height: 480px;
+      border-radius: 12px;
+      background: #e3e9df;
+      z-index: 1;
+    }
+
+    .map-disclaimer {
+      padding: 12px 3px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    /* =========================
+       RESOURCE MAP EMBED
+    ========================== */
+    .resource-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow);
+    }
+
+    .resource-frame {
+      width: 100%;
+      height: 600px;
+      border: 0;
+      border-radius: 12px;
+      background: #edf2ec;
+    }
+
+    .resource-actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 17px;
+    }
+
+    /* =========================
+       FEATURE CARDS
+    ========================== */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+    }
+
+    .feature-card {
+      padding: 28px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: var(--radius);
+      transition: .25s;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow);
+      border-color: #c5d8c6;
+    }
+
+    .feature-icon {
+      font-size: 27px;
+      margin-bottom: 18px;
+      background: var(--green-light);
+      display: grid;
+      place-items: center;
+      width: 55px;
+      height: 55px;
+      border-radius: 14px;
+    }
+
+    .feature-card h3 {
+      color: var(--green-dark);
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .feature-card p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-bottom: 17px;
+    }
+
+    .text-link {
+      color: var(--green);
+      font-weight: 800;
+      font-size: 13px;
+    }
+
+    /* =========================
+       CALL TO ACTION
+    ========================== */
+    .cta {
+      padding: 55px 0;
+    }
+
+    .cta-inner {
+      background: var(--green-dark);
+      color: white;
+      padding: 42px;
+      border-radius: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 25px;
+      flex-wrap: wrap;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .cta-inner::after {
+      content: "";
+      position: absolute;
+      width: 230px;
+      height: 230px;
+      right: 18%;
+      top: -130px;
+      border: 1px solid rgba(255,255,255,.14);
+      border-radius: 50%;
+      box-shadow: 0 0 0 25px rgba(255,255,255,.025),
+                  0 0 0 50px rgba(255,255,255,.025);
+    }
+
+    .cta-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 630px;
+    }
+
+    .cta-copy h2 {
+      font-size: clamp(24px, 4vw, 34px);
+      margin-bottom: 12px;
+    }
+
+    .cta-copy p {
+      color: #d9e8dc;
+      font-size: 14px;
+    }
+
+    .cta-inner .btn {
+      position: relative;
+      z-index: 1;
+      background: white;
+      color: var(--green-dark);
+      flex-shrink: 0;
+    }
+
+    /* =========================
+       FOOTER
+    ========================== */
+    footer {
+      background: #0d3023;
+      color: #dce9de;
+      padding: 43px 0 20px;
+    }
+
+    .footer-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr 1fr;
+      gap: 40px;
+      padding-bottom: 32px;
+    }
+
+    .footer-brand {
+      font-size: 19px;
+      color: white;
+      margin-bottom: 12px;
+    }
+
+    .footer-grid p {
+      color: #bdcfc2;
+      font-size: 13px;
+      margin-bottom: 10px;
+    }
+
+    .footer-grid h4 {
+      font-size: 14px;
+      color: white;
+      margin-bottom: 15px;
+    }
+
+    .footer-links {
+      list-style: none;
+    }
+
+    .footer-links li {
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .footer-links a:hover {
+      color: #e6c775;
+    }
+
+    .copyright {
+      border-top: 1px solid rgba(255,255,255,.13);
+      padding-top: 17px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      color: #b9c9be;
+      font-size: 12px;
+    }
+
+    /* =========================
+       BACK TO TOP
+    ========================== */
+    .back-top {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 900;
+      width: 45px;
+      height: 45px;
+      border: 0;
+      border-radius: 50%;
+      color: white;
+      background: var(--green);
+      box-shadow: var(--shadow);
+      cursor: pointer;
+      font-size: 21px;
+      display: none;
+    }
+
+    .back-top.visible {
+      display: block;
+    }
+
+    /* =========================
+       RESPONSIVE DESIGN
+    ========================== */
+    @media (max-width: 900px) {
+      .nav-links {
+        gap: 14px;
+      }
+
+      .nav-links a {
+        font-size: 12px;
+      }
+
+      .intro-grid,
+      .location-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .facts-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 700px) {
+      .nav-inner {
+        min-height: 70px;
+      }
+
+      .menu-toggle {
+        display: block;
+        flex-shrink: 0;
+      }
+
+      .nav-links {
+        display: none;
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 70px;
+        background: white;
+        border-bottom: 1px solid var(--border);
+        padding: 18px 5%;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        box-shadow: var(--shadow);
+      }
+
+      .nav-links.open {
+        display: flex;
+      }
+
+      .nav-links li {
+        padding: 10px 0;
+      }
+
+      .nav-links .nav-cta {
+        display: inline-block;
+        text-align: center;
+      }
+
+      .brand h2 {
+        font-size: 13px;
+      }
+
+      .brand p {
+        font-size: 10px;
+      }
+
+      .brand-logo {
+        width: 40px;
+        height: 40px;
+      }
+
+      .hero {
+        min-height: 520px;
+      }
+
+      .hero-content {
+        padding: 70px 0;
+      }
+
+      .hero h1 {
+        letter-spacing: -.8px;
+      }
+
+      .section {
+        padding: 55px 0;
+      }
+
+      .intro-image {
+        height: 290px;
+      }
+
+      .location-image {
+        height: 260px;
+      }
+
+      #map {
+        height: 380px;
+      }
+
+      .resource-frame {
+        height: 460px;
+      }
+
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .footer-grid {
+        grid-template-columns: 1fr;
+        gap: 24px;
+      }
+
+      .cta-inner {
+        padding: 28px;
+      }
+
+      .map-shell {
+        padding: 10px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .facts-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .gov-inner {
+        font-size: 10px;
+      }
+
+      .hero-actions .btn {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html {
+        scroll-behavior: auto;
+      }
+
+      *, *::before, *::after {
+        transition-duration: .01ms !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- GOVERNMENT HEADER -->
+  <div class="gov-bar">
+    <div class="container gov-inner">
+      <div class="gov-left">
+        <img src="govt logo.jpg" alt="Government emblem"
+             onerror="this.style.display='none'">
+        <span>Government of Kerala</span>
+      </div>
+      <span>Local Self Government Department · Kerala, India</span>
+    </div>
+  </div>
+
+  <!-- NAVIGATION -->
+  <nav class="navbar">
+    <div class="container nav-inner">
+
+      <a class="brand" href="#home" aria-label="Perumatty home">
+        <img class="brand-logo" src="govt logo.jpg" alt="Government emblem"
+             onerror="this.style.display='none'">
+        <div>
+          <h2>PERUMATTY GRAMA PANCHAYAT</h2>
+          <p>Local Geography · Spatial Information · WebGIS</p>
+        </div>
+      </a>
+
+      <button class="menu-toggle" id="menuToggle"
+              aria-label="Open navigation menu"
+              aria-expanded="false">☰</button>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#location">Location</a></li>
+        <li><a href="#webgis">Interactive Map</a></li>
+        <li><a href="#resources">Resource Map</a></li>
+        <li><a class="nav-cta" href="#explore">Explore WebGIS ↗</a></li>
+      </ul>
+
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="hero" id="home">
+    <img class="hero-image"
+         src="panchayath photo.jpg"
+         alt="Perumatty Grama Panchayat"
+         onerror="this.style.display='none'">
+
+    <div class="container">
+      <div class="hero-content">
+        <span class="hero-tag">🌿 LOCAL GOVERNANCE · GEOSPATIAL TECHNOLOGY</span>
+
+        <h1>Discover <span>Perumatty</span><br>Through Maps.</h1>
+
+        <p>
+          Explore the geographical setting, local resources and spatial
+          information of Perumatty Grama Panchayat through an integrated
+          digital mapping platform.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#webgis" class="btn btn-primary">
+            Explore Interactive Map ↗
+          </a>
+
+          <a href="#about" class="btn btn-outline">
+            Discover the Panchayat
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- QUICK FACTS -->
+  <section class="facts-section">
+    <div class="container facts-grid">
+
+      <article class="fact-card">
+        <div class="fact-icon">📍</div>
+        <h3>Geographical Location</h3>
+        <p>Perumatty, Palakkad district, Kerala</p>
+      </article>
+
+      <article class="fact-card">
+        <div class="fact-icon">🗺️</div>
+        <h3>Spatial Mapping</h3>
+        <p>Explore geographic information through maps</p>
+      </article>
+
+      <article class="fact-card">
+        <div class="fact-icon">🌱</div>
+        <h3>Local Resources</h3>
+        <p>Visualise local features and resources</p>
+      </article>
+
+      <article class="fact-card">
+        <div class="fact-icon">💻</div>
+        <h3>Digital Platform</h3>
+        <p>Access geographic information online</p>
+      </article>
+
+    </div>
+  </section>
+
+  <!-- ABOUT -->
+  <section class="section" id="about">
+    <div class="container intro-grid">
+
+      <div class="intro-image-wrap">
+        <img class="intro-image"
+             src="panchayath photo.jpg"
+             alt="Perumatty Grama Panchayat photograph"
+             loading="lazy"
+             onerror="this.style.display='none'">
+
+        <div class="image-caption">
+          Perumatty Grama Panchayat · Palakkad District, Kerala
+        </div>
+      </div>
+
+      <div class="intro-text">
+        <span class="eyebrow">About the Panchayat</span>
+
+        <h2>Understanding the Landscape of Perumatty</h2>
+
+        <p>
+          Perumatty Grama Panchayat is located in Palakkad district,
+          Kerala. Understanding its geographical setting and distribution
+          of local resources is important for spatial planning and
+          local-level development.
+        </p>
+
+        <p>
+          This WebGIS portal brings together geographic information,
+          interactive mapping and resource visualisation to help users
+          explore the area through a digital interface.
+        </p>
+
+        <div class="intro-note">
+          <strong>Purpose of this portal</strong><br>
+          To make geographic information easier to explore and support
+          informed, location-based understanding of the Panchayat.
+        </div>
+
+        <a href="#webgis" class="btn btn-primary">
+          View Geographic Map ↗
+        </a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- LOCATION -->
+  <section class="section" id="location" style="background:#fff;">
+    <div class="container">
+
+      <div class="section-heading">
+        <span class="eyebrow">Geographical Setting</span>
+        <h2>Locate Perumatty</h2>
+        <p>
+          View the Panchayat's location map and explore its wider
+          geographical context.
+        </p>
+      </div>
+
+      <div class="location-layout">
+
+        <div class="location-text">
+          <h3>Perumatty, Palakkad, Kerala</h3>
+
+          <p>
+            Perumatty is a Grama Panchayat in Palakkad district in
+            the state of Kerala, India. Its geographical location
+            provides the context for local resource mapping and
+            spatial analysis.
+          </p>
+
+          <p>
+            The location map displayed here can be used alongside
+            the interactive map to understand the area's spatial setting.
+          </p>
+
+          <a href="#webgis" class="btn btn-primary">
+            Open Interactive Map ↗
+          </a>
+        </div>
+
+        <div>
+          <img class="location-image"
+               src="PERUMATTY.png"
+               alt="Perumatty location map"
+               loading="lazy"
+               onerror="this.alt='Location map image not found. Check that PERUMATTY.png is in the same folder.'">
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- INTERACTIVE MAP -->
+  <section class="section webgis-section" id="webgis">
+    <div class="container">
+
+      <div class="section-heading">
+        <span class="eyebrow">Explore Spatial Information</span>
+        <h2>Interactive Geographic Map</h2>
+        <p>
+          Navigate the map, zoom into locations and switch between
+          available background layers.
+        </p>
+      </div>
+
+      <div class="map-shell">
+
+        <div class="map-toolbar">
+          <div>
+            <h3>Perumatty Interactive Map</h3>
+            <p>Map layers and navigation controls</p>
+          </div>
+
+          <div class="map-controls">
+            <button type="button" id="standardLayer">
+              Standard Map
+            </button>
+
+            <button type="button" id="terrainLayer">
+              Terrain Map
+            </button>
+
+            <button type="button" id="resetMap">
+              Reset View ↺
+            </button>
+          </div>
+        </div>
+
+        <div id="map" aria-label="Interactive geographic map"></div>
+
+        <p class="map-disclaimer">
+          Note: This is a general reference map. The marker and initial
+          extent are illustrative and do not represent a verified Panchayat
+          boundary. Use authoritative coordinates and boundary data for
+          official mapping.
+        </p>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- RESOURCE WEBGIS -->
+  <section class="section" id="resources">
+    <div class="container">
+
+      <div class="section-heading">
+        <span class="eyebrow">Spatial Resources</span>
+        <h2>Panchayat Resource Map</h2>
+        <p>
+          Access the published Perumatty WebGIS resource map and
+          explore its available geographic layers.
+        </p>
+      </div>
+
+      <div class="resource-card">
+
+        <iframe
+          class="resource-frame"
+          src="https://fathimashahanain-hue.github.io/PERUMATTY-WEB-GIS/"
+          title="Perumatty Grama Panchayat WebGIS resource map"
+          loading="lazy"
+          allowfullscreen>
+        </iframe>
+
+        <div class="resource-actions">
+          <a class="btn btn-primary"
+             href="https://fathimashahanain-hue.github.io/PERUMATTY-WEB-GIS/"
+             target="_blank"
+             rel="noopener noreferrer">
+            Open Resource Map in New Tab ↗
+          </a>
+        </div>
+
+        <p class="map-disclaimer">
+          If the map does not load inside this page, use the button above
+          to open it directly. Some websites do not permit iframe embedding.
+        </p>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="section" id="explore" style="background:#fff;">
+    <div class="container">
+
+      <div class="section-heading">
+        <span class="eyebrow">Explore the Platform</span>
+        <h2>Geographic Information at Your Fingertips</h2>
+        <p>
+          Use this platform to access spatial information and explore
+          the geographical characteristics of Perumatty.
+        </p>
+      </div>
+
+      <div class="features-grid">
+
+        <article class="feature-card">
+          <div class="feature-icon">🗺️</div>
+          <h3>Interactive Mapping</h3>
+          <p>
+            Explore a digital map using zoom, pan and background-layer
+            controls to understand the local geographical setting.
+          </p>
+          <a href="#webgis" class="text-link">Explore map →</a>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">📌</div>
+          <h3>Location Information</h3>
+          <p>
+            View the location map and understand the Panchayat's
+            position within the wider district context.
+          </p>
+          <a href="#location" class="text-link">View location →</a>
+        </article>
+
+        <article class="feature-card">
+          <div class="feature-icon">🌍</div>
+          <h3>Resource Visualisation</h3>
+          <p>
+            Open the linked resource mapping platform to explore the
+            geographic layers provided by the published WebGIS.
+          </p>
+          <a href="#resources" class="text-link">View resources →</a>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="cta">
+    <div class="container">
+      <div class="cta-inner">
+
+        <div class="cta-copy">
+          <h2>Explore Perumatty Through WebGIS</h2>
+          <p>
+            Start exploring the maps and geographic resources available
+            through this digital platform.
+          </p>
+        </div>
+
+        <a class="btn"
+           href="https://fathimashahanain-hue.github.io/PERUMATTY-WEB-GIS/"
+           target="_blank"
+           rel="noopener noreferrer">
+          Launch WebGIS ↗
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="container">
+
+      <div class="footer-grid">
+
+        <div>
+          <h3 class="footer-brand">Perumatty Grama Panchayat</h3>
+          <p>
+            A digital geographic information portal for exploring
+            the spatial setting and local resources of Perumatty,
+            Palakkad district, Kerala.
+          </p>
+        </div>
+
+        <div>
+          <h4>Quick Navigation</h4>
+          <ul class="footer-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#about">About the Panchayat</a></li>
+            <li><a href="#location">Location Map</a></li>
+            <li><a href="#webgis">Interactive Map</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <h4>Explore WebGIS</h4>
+          <ul class="footer-links">
+            <li><a href="#resources">Resource Map</a></li>
+            <li>
+              <a href="https://fathimashahanain-hue.github.io/PERUMATTY-WEB-GIS/"
+                 target="_blank"
+                 rel="noopener noreferrer">
+                Open Published WebGIS ↗
+              </a>
+            </li>
+          </ul>
+        </div>
+
+      </div>
+
+      <div class="copyright">
+        <span>
+          © <span id="year"></span> Perumatty WebGIS Portal
+        </span>
+        <span>Geographic Information · Spatial Exploration</span>
+      </div>
+
+    </div>
+  </footer>
+
+  <button class="back-top" id="backTop"
+          aria-label="Back to top">↑</button>
+
+  <!-- LEAFLET JAVASCRIPT -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <script>
+    /* =========================
+       MOBILE NAVIGATION
+    ========================== */
+    const menuToggle = document.getElementById("menuToggle");
+    const navLinks = document.getElementById("navLinks");
+
+    menuToggle.addEventListener("click", function () {
+      const isOpen = navLinks.classList.toggle("open");
+      menuToggle.setAttribute("aria-expanded", String(isOpen));
+      menuToggle.textContent = isOpen ? "×" : "☰";
+    });
+
+    document.querySelectorAll("#navLinks a").forEach(function (link) {
+      link.addEventListener("click", function () {
+        navLinks.classList.remove("open");
+        menuToggle.setAttribute("aria-expanded", "false");
+        menuToggle.textContent = "☰";
+      });
+    });
+
+    /* =========================
+       FOOTER YEAR
+    ========================== */
+    document.getElementById("year").textContent =
+      new Date().getFullYear();
+
+    /* =========================
+       BACK TO TOP BUTTON
+    ========================== */
+    const backTop = document.getElementById("backTop");
+
+    window.addEventListener("scroll", function () {
+      backTop.classList.toggle("visible", window.scrollY > 400);
+    });
+
+    backTop.addEventListener("click", function () {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+    });
+
+    /* =========================
+       INTERACTIVE LEAFLET MAP
+    ========================== */
+    const initialCenter = [10.75, 76.75];
+    const initialZoom = 10;
+
+    const map = L.map("map", {
+      zoomControl: true,
+      scrollWheelZoom: true
+    }).setView(initialCenter, initialZoom);
+
+    const standard = L.tileLayer(
+      "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+      {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors'
+      }
+    );
+
+    const terrain = L.tileLayer(
+      "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
+      {
+        maxZoom: 17,
+        attribution: '&copy; <a href="https://opentopomap.org" target="_blank" rel="noopener">OpenTopoMap</a> contributors'
+      }
+    );
+
+    standard.addTo(map);
+
+    /* Illustrative reference marker only.
+       Replace with verified Panchayat coordinates. */
+    const marker = L.marker(initialCenter).addTo(map);
+
+    marker.bindPopup(
+      "<strong>Perumatty Grama Panchayat</strong><br>" +
+      "Palakkad district, Kerala<br>" +
+      "<small>Illustrative reference location</small>"
+    );
+
+    /* Map layer controls */
+    document.getElementById("standardLayer")
+      .addEventListener("click", function () {
+        if (map.hasLayer(terrain)) {
+          map.removeLayer(terrain);
+        }
+        if (!map.hasLayer(standard)) {
+          standard.addTo(map);
+        }
+      });
+
+    document.getElementById("terrainLayer")
+      .addEventListener("click", function () {
+        if (map.hasLayer(standard)) {
+          map.removeLayer(standard);
+        }
+        if (!map.hasLayer(terrain)) {
+          terrain.addTo(map);
+        }
+      });
+
+    /* Reset map view */
+    document.getElementById("resetMap")
+      .addEventListener("click", function () {
+        map.setView(initialCenter, initialZoom);
+      });
+
+    /* Fix map display when loading or navigating to the section */
+    document.querySelectorAll('a[href="#webgis"]').forEach(function (link) {
+      link.addEventListener("click", function () {
+        setTimeout(function () {
+          map.invalidateSize();
+        }, 250);
+      });
+    });
+
+    window.addEventListener("load", function () {
+      map.invalidateSize();
+    });
+  </script>
+
+</body>
+</html>
